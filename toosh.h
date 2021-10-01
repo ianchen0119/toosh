@@ -16,6 +16,7 @@ private:
   int currentCmd = 0;
   void prompt();
   void splitBySpace(std::string source);
+  void meow();
 public:
   toosh() = default;
   ~toosh() = default;

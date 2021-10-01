@@ -1,63 +1,74 @@
 #include "toosh.h"
-
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <algorithm>
 #include <cstring>
 #include <sstream>
 
-// gcc info.C -lstdc++
-
-// static inline int is_delim(int c)
-// {
-//     return c == 0 || c == '|';
-// }
-
-// static inline int is_redir(int c)
-// {
-//     return c == '>' || c == '<';
-// }
-
-// static inline int is_blank(int c)
-// {
-//     return c == ' ' || c == '\t' || c == '\n';
-// }
-
-// static int is_special(int c)
-// {
-//     return is_delim(c) || is_redir(c) || is_blank(c);
-// }
-
 void toosh::splitBySpace(std::string source){
-  std::istringstream in(this->cmd[0]);
-  std::string t;
-  while (in >> t)
-  {
-    this->parse.push_back(t);
-    std::cout << t << std::endl;
-  }
-  
+	std::string temp = "";
+	for(int i = 0; i < source.length(); ++i){
+	    if(source[i]==' '){
+		this->parse.push_back(temp);
+		temp = "";
+	    }
+	    else{
+		temp.push_back(source[i]);
+	    }
+		
+	}
+	this->parse.push_back(temp);	
 }
+
 
 void toosh::prompt(){
   write(2, "$ ", 2);
 }
 
+void toosh::meow(){
+	std::cout <<" 　　　　　 ＿＿  "<< std::endl;
+	std::cout <<"　　　　／＞　　フ"<< std::endl;
+	std::cout <<"　　　　| 　_  _ l"<< std::endl;
+	std::cout <<" 　　　／` ミ＿xノ"<< std::endl;
+	std::cout <<"　 　 /　　　 　 |"<< std::endl;
+	std::cout <<"　　 /　 ヽ　　 ﾉ "<< std::endl;
+	std::cout <<" 　 │　　|　|　|  "<< std::endl;
+	std::cout <<"／￣|　　 |　|　| "<< std::endl;
+	std::cout <<"| (￣ヽ＿_ヽ_)__) "<< std::endl;
+	std::cout <<"＼二つ		   "<< std::endl;
+
+}
+
 void toosh::run(){
+  this->meow();
   while (true)
   {
+    this->parse.clear();
+    
     this->prompt();
-    std::cin >> this->cmd[0];
-    this->splitBySpace(this->cmd[0]);
-    int i = 0;
-    for(auto val: this->parse){
-      this->execArg[i] = strdup(val.c_str());
-      i++;
+
+    getline(std::cin, this->cmd[0]);
+
+    if(this->cmd[0] == ""){
+	std::cout << std::endl;
+    	continue;
     }
+
+    this->splitBySpace(this->cmd[0]);
+    
+    int i = 0;
+    
+    for(auto val: this->parse){
+      std::cout << val << std::endl;
+      this->execArg[i++] = strdup(val.c_str());
+    }
+    
     pid_t pid = fork();
+    
     if(pid){
       int status;
       waitpid(pid, &status, 0 );
-      return;
     }else{
       execvp(execArg[0], execArg);
       exit(123);

@@ -8,14 +8,13 @@ class toosh
 {
 private:
   std::string cmd[10];
-  std::vector<std::string> parse;
-  char* execArg[10] = {NULL};
+  std::vector<std::string> parse[10];
+  char* execArg[50] = {NULL};
   int lastCmd = 0;
   int currentCmd = 0;
   void prompt();
-  void splitBySpace(std::string source, int p);
+  void parser(std::string source);
   int hasInderect();
-  int hasPipe(std::string input);
   void meow();
   int execCmd(std::string input, int t);
 public:

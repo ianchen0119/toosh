@@ -8,7 +8,7 @@
 
 void toosh::meow(){
 	std::cout <<" 　　　　　 ＿＿  "<< std::endl;
-	std::cout <<"　　　　／＞　　フ"<< std::endl;
+	std::cout <<"　　　　 ／＞　　フ"<< std::endl;
 	std::cout <<"　　　　| 　_  _ l"<< std::endl;
 	std::cout <<" 　　　／` ミ＿xノ"<< std::endl;
 	std::cout <<"　 　 /　　　 　 |"<< std::endl;
@@ -25,30 +25,32 @@ toosh::toosh(){
 }
 
 void toosh::prompt(){
-  write(2, "$ ", 2);
+    this->currentCmd = 0;
+    this->lastCmd = 0;
+    write(2, "$ ", 2);
 }
 
-void toosh::splitBySpace(std::string source, int p){
+void toosh::parser(std::string source){
 	std::string temp = "";
-    int n = (p)?(p):(source.length());
-	for(int i = 0; i < n; ++i){
+    // std::cout << source.length() << std::endl;
+
+	for(int i = 0; i < source.length(); ++i){
 	    if(source[i]==' '){
-		this->parse.push_back(temp);
-		temp = "";
+            if(temp != ""){
+                this->parse[this->lastCmd].push_back(temp);
+		        temp = "";
+            }
+            continue;
 	    }
-	    else{
+        if(source[i]=='|'){
+            this->lastCmd++;
+            continue;
+        }
+        // std::cout << temp << std::endl;
 		temp.push_back(source[i]);
-	    }
 		
 	}
-	this->parse.push_back(temp);	
-}
-
-int toosh::hasPipe(std::string input){
-
-    int returnVal = input.find("|");
-
-    return returnVal;
+	this->parse[this->lastCmd].push_back(temp);	
 }
 
 int toosh::execCmd(std::string input, int t){
@@ -63,33 +65,46 @@ int toosh::execCmd(std::string input, int t){
         }
 
         // this->hasInderect();
-
-        // int p = this->hasPipe(input, pipefds, outfd);
-
-        // if(p != std::npos){
-            // has pipe
-            // pipe(pipefds);
-            // outfd = pipefds[1];
-        //     this->splitBySpace(input, p);
-        // }else{
-        //     this->splitBySpace(input, 0);
-        // }
         
-        this->splitBySpace(input, 0);
+        this->parser(input);
 
-        int i = 0;
-        for(auto val: this->parse){
-            this->execArg[i++] = strdup(val.c_str());
+        while(this->currentCmd <= this->lastCmd){
+            int i = 0;
+            
+            for(auto val: this->parse[this->currentCmd]){
+                this->execArg[i++] = strdup(val.c_str());
+            }
+
+            this->execArg[i] = NULL;
+
+            this->parse[this->currentCmd].clear();
+
+            this->currentCmd++;
+
+            pid_t pid = fork();
+
+            if(pid){
+                wait(0);
+                // return 0;
+            }else{
+                if(this->lastCmd > 0 && this->currentCmd == 1){
+                    // change output
+                    pipe(pipefds);
+                    std::cout << "a" << pipefds[1]<< std::endl;
+                    dup2(pipefds[1], 1); /* dup write fd to stdout */
+                    // close(pipefds[1]);   /* close write fd */
+                }
+                if(this->lastCmd > 0 && this->currentCmd > 1){
+                    std::cout << "b" << pipefds[0] << std::endl;
+                    dup2(pipefds[0], 0);
+                    // close(pipefds[0]);
+                }
+                execvp(execArg[0], execArg);
+                // todo: clear execArg
+                exit(123);
+            }
         }
-        pid_t pid = fork();
-        if(pid){
-            int status;
-            waitpid(pid, &status, 0 );
-            return 0;
-        }else{
-            execvp(execArg[0], execArg);
-            exit(123);
-        }
+        return 0;
     }  
 }
 
@@ -98,8 +113,6 @@ void toosh::run(){
   std::string input;
   while (true)
   {
-    this->parse.clear();
-    
     this->prompt();
 
     getline(std::cin, input);

@@ -1,6 +1,6 @@
 all: clear output exec
-output: main.cpp
-	g++ main.cpp
+output: main.cpp toosh.cpp
+	g++ main.cpp toosh.cpp
 exec: 
 	./a.out
 clear:

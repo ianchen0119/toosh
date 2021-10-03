@@ -16,7 +16,7 @@ private:
   void parser(std::string source);
   int hasInderect();
   void meow();
-  int execCmd(std::string input, int t);
+  int execCmd(std::string input);
 public:
   toosh();
   ~toosh() = default;

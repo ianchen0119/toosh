@@ -32,7 +32,6 @@ void toosh::prompt(){
 
 void toosh::parser(std::string source){
 	std::string temp = "";
-    // std::cout << source.length() << std::endl;
 
 	for(int i = 0; i < source.length(); ++i){
 	    if(source[i]==' '){
@@ -46,14 +45,14 @@ void toosh::parser(std::string source){
             this->lastCmd++;
             continue;
         }
-        // std::cout << temp << std::endl;
+
 		temp.push_back(source[i]);
 		
 	}
 	this->parse[this->lastCmd].push_back(temp);	
 }
 
-int toosh::execCmd(std::string input, int t){
+int toosh::execCmd(std::string input){
     int pipefds[2] = {0, 0};
     int outfd = 0;
     std::string childCmd;
@@ -81,27 +80,27 @@ int toosh::execCmd(std::string input, int t){
 
             this->currentCmd++;
 
+            if(this->lastCmd > 0 && (this->currentCmd & 1) == 1){
+                pipe(pipefds);
+            }
+
             pid_t pid = fork();
 
             if(pid){
-                wait(0);
-                // return 0;
+                std::cout << "[init] child pid:" << pid << std::endl;
+                waitpid(pid, NULL, 0);
+                std::cout << "[finished] child pid:" << pid << std::endl;
             }else{
-                if(this->lastCmd > 0 && this->currentCmd == 1){
-                    // change output
-                    pipe(pipefds);
-                    std::cout << "a" << pipefds[1]<< std::endl;
+                if(this->lastCmd > 0 && (this->currentCmd & 1) == 1){
                     dup2(pipefds[1], 1); /* dup write fd to stdout */
-                    // close(pipefds[1]);   /* close write fd */
+                    close(pipefds[1]);   /* close write fd */
                 }
-                if(this->lastCmd > 0 && this->currentCmd > 1){
-                    std::cout << "b" << pipefds[0] << std::endl;
+                if(this->lastCmd > 0 && (this->currentCmd % 2) == 0){
                     dup2(pipefds[0], 0);
-                    // close(pipefds[0]);
+                    close(pipefds[0]);
                 }
                 execvp(execArg[0], execArg);
-                // todo: clear execArg
-                exit(123);
+                // exit(0);
             }
         }
         return 0;
@@ -117,7 +116,7 @@ void toosh::run(){
 
     getline(std::cin, input);
 
-    this->execCmd(input, 0);
+    this->execCmd(input);
 
   }
 }
